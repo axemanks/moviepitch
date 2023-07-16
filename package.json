@@ -7,8 +7,8 @@
     "vite": "latest"
   },
   "scripts": {
-    "start": "vite -p 3049",
-    "dev": "vite -p 3049",
+    "start": "vite",
+    "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"
   }
