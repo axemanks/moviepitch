@@ -227,6 +227,7 @@ button:hover {
 
 .view-pitch-btn:hover {
     box-shadow: 1px 1px 5px 1px var(--medium-dark);
+    cursor: pointer;
 }
 
 img.loading {
@@ -239,7 +240,7 @@ img.loading {
      ================= */
 
 .output-container {
-    /* display: none; */
+    display: none;
     flex-direction: column;
     margin: 1em auto;
     color: var(--dark);
@@ -247,7 +248,7 @@ img.loading {
 }
 
 .output-img-container>img {
-    max-width: 100%;
+    width: 100%;
     border-radius: var(--border-rad-lg);
     box-shadow: 1px 1px 5px 1px var(--dark);
 }

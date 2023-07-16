@@ -6,12 +6,12 @@ const setupInputContainer = document.getElementById('setup-input-container') // 
 const movieBossText = document.getElementById('movie-boss-text') // the prompt text
 
 
-// set configuration
+// set openai configuration
 const configuration = new Configuration({
     apiKey: process.env.OPENAI_API_KEY
 })
 
-// new instance of OpenAIApi
+// new instance of openai
 const openai = new OpenAIApi(configuration)
 
 // add event listener to the send button
@@ -25,12 +25,12 @@ document.getElementById("send-btn").addEventListener("click", () => {
         // fetch the response from the API
         fetchBotReply(userInput);
         fetchSynopsis(userInput);
-
     }
 });
 
 
 // fetch the response from the API
+// few-shot approach w/ mutliple examples
 async function fetchBotReply(outline) {
     const response = await openai.createCompletion({
         model: 'text-davinci-003',
@@ -81,13 +81,17 @@ async function fetchTitle(synopsis) {
         model: 'text-davinci-003',
         prompt: `Generate a gripping and exciting title for a movie that will go down in history based on the ${synopsis}`,
         max_tokens: 50,
-        temperature: 0.7,// more creative
+        temperature: 0.8,// more creative
     });
-    document.getElementById('output-title').innerText = response.data.choices[ 0 ].text.trim() // change "output-title" h1
+     
+    const title = response.data.choices[0].text.trim() // change "output-title" h1
+    document.getElementById('output-title').innerText = title
+    fetchImagePrompt(title, synopsis)
+    console.log("Attempting to get image desc.")
 };
 
 // extract actor names
-async function fetchStars(synopsis) {
+async function fetchStars(synopsis){
     const response = await openai.createCompletion({
         model: 'text-davinci-003',
         prompt: `Extract the names in brackets from the synopsis.
@@ -100,7 +104,51 @@ async function fetchStars(synopsis) {
         `,
         max_tokens: 30
     })
-    document.getElementById('output-stars').innerText = response.data.choices[ 0 ].text.trim()
+    document.getElementById('output-stars').innerText = response.data.choices[0].text.trim()
 }
 
 
+// fetch image prompt
+async function fetchImagePrompt(title, synopsis){
+    console.log("Attempting to fetch image prompt")
+    const response = await openai.createCompletion({
+      model: 'text-davinci-003',
+      prompt: `Give a short description of an image which could be used to advertise a movie based on a title and synopsis. The description should be rich in visual detail but contain no names.
+      ###
+      title: Love's Time Warp
+      synopsis: When scientist and time traveller Wendy (Emma Watson) is sent back to the 1920s to assassinate a future dictator, she never expected to fall in love with them. As Wendy infiltrates the dictator's inner circle, she soon finds herself torn between her mission and her growing feelings for the leader (Brie Larson). With the help of a mysterious stranger from the future (Josh Brolin), Wendy must decide whether to carry out her mission or follow her heart. But the choices she makes in the 1920s will have far-reaching consequences that reverberate through the ages.
+      image description: A silhouetted figure stands in the shadows of a 1920s speakeasy, her face turned away from the camera. In the background, two people are dancing in the dim light, one wearing a flapper-style dress and the other wearing a dapper suit. A semi-transparent image of war is super-imposed over the scene.
+      ###
+      title: zero Earth
+      synopsis: When bodyguard Kob (Daniel Radcliffe) is recruited by the United Nations to save planet Earth from the sinister Simm (John Malkovich), an alien lord with a plan to take over the world, he reluctantly accepts the challenge. With the help of his loyal sidekick, a brave and resourceful hamster named Gizmo (Gaten Matarazzo), Kob embarks on a perilous mission to destroy Simm. Along the way, he discovers a newfound courage and strength as he battles Simm's merciless forces. With the fate of the world in his hands, Kob must find a way to defeat the alien lord and save the planet.
+      image description: A tired and bloodied bodyguard and hamster standing atop a tall skyscraper, looking out over a vibrant cityscape, with a rainbow in the sky above them.
+      ###
+      title: ${title}
+      synopsis: ${synopsis}
+      image description: 
+      `,
+      temperature: 0.8,
+      max_tokens: 100
+    })
+    fetchImageUrl(response.data.choices[0].text.trim())
+    console.log(response.data.choices[0].text.trim())
+  }
+
+// fetch image url
+async function fetchImageUrl(imagePrompt){
+    const response = await openai.createImage({
+      prompt: `${imagePrompt}. There should be no text in this image.`,
+      n: 1,
+      size: '256x256',
+      response_format: 'b64_json' 
+    })
+    document.getElementById('output-img-container').innerHTML = `<img src="data:image/png;base64,${response.data.data[0].b64_json}">`
+    // replace loading with button
+    setupInputContainer.innerHTML = `<button id='view-pitch-btn' class='view-pitch-btn'>View Pitch</button>`
+    // add event listener to button
+    document.getElementById('view-pitch-btn').addEventListener('click', () => {
+        document.getElementById('setup-container').style.display = 'none' // hide setup container
+        document.getElementById('output-container').style.display = 'flex' // show output container
+        movieBossText.innerText = `This idea is so good I'm jealous! It's going to make you rich for sure! Remember, I want 10% 💰`
+    });
+  }
